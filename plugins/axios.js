@@ -1,10 +1,12 @@
-import axios from 'axios';
-import notify from '~/plugins/notify'
+import axios from 'axios'
+import { useNotificationStore } from '@/store/notification'
+
 
 export default defineNuxtPlugin(nuxtApp => {
+  let notify = useNotificationStore()
 
-  let api = axios.create({
-    baseURL: useRuntimeConfig().apiBase,
+  let instance = axios.create({
+    baseURL: useRuntimeConfig().public.apiBase,
     timeout: 60000,
     headers: {
       'Content-type': 'application/json; charset=UTF-8',
@@ -12,7 +14,7 @@ export default defineNuxtPlugin(nuxtApp => {
     withCredentials: true,
   });
 
-  api.interceptors.request.use(async (config) => {
+  instance.interceptors.request.use(async (config) => {
     let token = localStorage.getItem('token')
   
     // Configure Headers
@@ -23,18 +25,22 @@ export default defineNuxtPlugin(nuxtApp => {
     return config
   })
 
-  api.interceptors.response.use(response => {
-    let route = response.config.url
-    notify.sendSuccess(response.data.messages, route)
+  instance.interceptors.response.use(response => {
+    if (response.config.url === 'login') {
+      let token = response.headers.authorization
+      instance.defaults.headers.common.Authorization = 'Bearer ' + token
+      localStorage.setItem('token', token)
+    }
+    notify.sendSuccessNotification(response.data.messages)
     return response
   }, error => {
-    notify.sendError(error.response.data.messages)
+    notify.sendErrorNotification(error.response.data.messages)
     return Promise.reject(error.response)
   })
   
   return {
     provide: {
-      api: api,
+      axios: instance,
     },
   };
 });
