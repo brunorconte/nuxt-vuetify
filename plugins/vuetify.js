@@ -12,7 +12,7 @@ export default defineNuxtPlugin(nuxtApp => {
     directives,
     ssr: true,
     theme: {
-      defaultTheme: 'lightUfa',
+      defaultTheme: 'light',
       themes: {
         lightUfa: {
           dark: false,
